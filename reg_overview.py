@@ -34,8 +34,6 @@ def get_overviews(raw_input):
     output = []
     input_new = format_input(raw_input)
 
-    print(input_new)
-
     try:
         with connect(DATABASE_URL, isolation_level=None,
         uri=True) as connection:
@@ -53,8 +51,6 @@ def get_overviews(raw_input):
                 stmt_str += "AND title LIKE ? "
                 stmt_str += "ESCAPE ';' ORDER BY "
                 stmt_str += "dept ASC, coursenum ASC, classid ASC"
-
-                print(stmt_str)
 
                 cursor.execute(stmt_str, input_new)
                 row = cursor.fetchone()
