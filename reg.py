@@ -10,8 +10,7 @@ from pickle import load, dump
 from sys import stderr, exit, argv
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QFrame, QLabel, QLineEdit, QGridLayout,
-    QVBoxLayout, QHBoxLayout, QPushButton, QDesktopWidget, QListWidget,
-    QMessageBox)
+    QVBoxLayout, QHBoxLayout, QDesktopWidget, QListWidget, QMessageBox)
 from PyQt5.QtCore import Qt
 
 #----------------------------------------------------------------------
@@ -102,7 +101,7 @@ def create_list():
     return courses_list
 
 #----------------------------------------------------------------------
-def create_frame(labels, text_fields, button, courses):
+def create_frame(labels, text_fields, courses):
     # layout for names and textfields
     names_layout = QVBoxLayout()
     names_layout.setSpacing(5)
@@ -124,7 +123,6 @@ def create_frame(labels, text_fields, button, courses):
     header_layout.setContentsMargins(0,0,0,0)
     header_layout.addWidget(names)
     header_layout.addWidget(fields)
-    header_layout.addWidget(button)
     header = QFrame()
     header.setLayout(header_layout)
 
@@ -168,50 +166,10 @@ def main() :
 
     app = QApplication(argv)
 
-    # creating the labels, text fields, submit button, list
+    # creating the labels, text fields, list
     labels = create_labels()
     text_fields = create_fields()
-    submit_button = QPushButton('Submit')
     courses_list = create_list()
-
-    # if the submit button is clicked send a message to the server
-    def submit_button_slot():
-
-        courses_list.clear()
-
-        try:
-            with socket() as sock:
-                sock.connect((host, port))
-
-                # the tuple with the information inputed by the user
-                out_flo = sock.makefile(mode='wb')
-                out_list = [0, input_fields(text_fields)]
-                dump(out_list, out_flo)
-                out_flo.flush()
-
-                # reading the information from the server's query
-                in_flo = sock.makefile(mode='rb')
-                in_list = load(in_flo)
-
-                # check if the query worked or not
-                if in_list[0] is False:
-                    msg = "A server error occurred. Please contact the system administrator."
-                    create_dialog(msg)
-
-                # adding each formatted line to the list of courses
-                else:
-                    for row in in_list[1]:
-                        courses_list.addItem(format_output(row))
-
-        # except sock_error as s_err:
-        #     if s_err.errno == errno.ECONNREFUSED:
-        #         msg = str(errno.ECONNREFUSED)
-        #         create_dialog(msg)
-
-        except Exception as ex:
-            create_dialog(str(ex))
-            # print(ex, file=stderr)
-            # exit(1)
 
     # if an item in the list is double-click, dialog appears
     def double_click_slot():
@@ -252,21 +210,19 @@ def main() :
         except Exception as ex:
             create_dialog(str(ex))
 
-    submit_button_slot()
     double_click_slot()
 
     # if the user presses Enter or click the submit button
-    text_fields[0].returnPressed.connect(submit_button_slot)
-    text_fields[1].returnPressed.connect(submit_button_slot)
-    text_fields[2].returnPressed.connect(submit_button_slot)
-    text_fields[3].returnPressed.connect(submit_button_slot)
-    submit_button.clicked.connect(submit_button_slot)
+    text_fields[0].returnPressed.connect()
+    text_fields[1].returnPressed.connect()
+    text_fields[2].returnPressed.connect()
+    text_fields[3].returnPressed.connect()
 
     # if the user double clicks on an item in the list
     courses_list.itemActivated.connect(double_click_slot)
 
     # create frame, window then show it
-    frame = create_frame(labels,text_fields,submit_button,courses_list)
+    frame = create_frame(labels,text_fields,courses_list)
     window = create_window(frame)
     window.show()
     exit(app.exec_())
