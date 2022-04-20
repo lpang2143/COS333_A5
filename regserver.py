@@ -31,8 +31,6 @@ def handle_client(sock, delay):
 
     input_type = int(raw_input[0])
     input_tuple = raw_input[1]
-    print("input type: ", input_type)
-    print("input tuple: ", input_tuple)
 
     consume_cpu_time(delay)
 
