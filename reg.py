@@ -11,7 +11,10 @@ from sys import stderr, exit, argv
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QFrame, QLabel, QLineEdit, QGridLayout,
     QVBoxLayout, QHBoxLayout, QDesktopWidget, QListWidget, QMessageBox)
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtGui import QFont
+from threading import Thread
+from queue import Queue, Empty
 
 #----------------------------------------------------------------------
 # Returns the argparse object, parser, after processing the command-line
@@ -96,6 +99,7 @@ def format_dialogue(in_list):
 #----------------------------------------------------------------------
 def create_list():
     courses_list = QListWidget()
+    courses_list.setFont(QFont('Courier'))
     courses_list.insertItem(0, ' ')
     courses_list.setCurrentRow(0)
     return courses_list
@@ -140,6 +144,7 @@ def create_frame(labels, text_fields, courses):
 # creates a dialog box displaying the message
 def create_dialog(message):
     message_box = QMessageBox()
+    message_box.setFont(QFont('Courier'))
     message_box.setIcon(QMessageBox.Information)
     message_box.setWindowTitle('Class Details')
     message_box.setText(message)
@@ -153,6 +158,72 @@ def create_window(frame):
     screen_size = QDesktopWidget().screenGeometry()
     window.resize(screen_size.width()//2, screen_size.height()//2)
     return window
+
+#----------------------------------------------------------------------
+class WorkerThread (Thread):
+    def __init__(self, host, port, dept, num, area, title, queue):
+        Thread.__init__(self)
+        self._host = host
+        self._port = port
+        self._dept = dept
+        self._num = num
+        self._area = area
+        self._title = title
+        self._queue = queue
+        self._should_stop = False
+
+    def stop(self):
+        self._should_stop = True
+
+    def run(self):
+        try:
+            with socket() as sock:
+                sock.connect((self._host, self._port))
+
+                # the tuple with the information inputed by the user
+                out_flo = sock.makefile(mode='wb')
+                text_to_send = [self._dept, self._num, 
+                                self._area, self._title]
+                out_list = [0, text_to_send]
+                dump(out_list, out_flo)
+                out_flo.flush()
+
+                # reading the information from the server's query
+                in_flo = sock.makefile(mode='rb')
+                in_list = load(in_flo)
+
+                # add the result of the query to the queue
+                if not self._should_stop:
+                    self._queue.put((True, in_list))
+        except Exception as ex:
+            if not self._should_stop:
+                self._queue.put((False, ex))
+
+#----------------------------------------------------------------------
+def poll_queue_helper(queue, courses_list):
+    while True:
+        try:
+            item = queue.get(block=False)
+        except Empty:
+            break
+        courses_list.clear()
+        successful, data = item
+        if successful:
+            courses = data
+            # check if the query worked or not
+            if courses[0] is False:
+                msg = "A server error occurred. Please\
+                        contact the system administrator."
+                create_dialog(msg)
+            elif len(courses[1]) == 0:
+                courses_list.insertItem(0, ' ')
+            else:
+                for row in courses[1]:
+                    courses_list.addItem(format_output(row))
+                courses_list.setCurrentRow(0)
+        else:
+            ex = data
+            create_dialog(str(ex))
 
 #----------------------------------------------------------------------
 def main() :
@@ -170,6 +241,41 @@ def main() :
     labels = create_labels()
     text_fields = create_fields()
     courses_list = create_list()
+
+    # using the timer to update what is being displayed
+    queue = Queue()
+    def poll_queue():
+        poll_queue_helper(queue, courses_list)
+    
+    timer = QTimer()
+    timer.timeout.connect(poll_queue)
+    timer.setInterval(100)
+    timer.start()
+
+    # spawns a new worker thread to query the database
+    worker_thread = None
+    def query_helper():
+        nonlocal worker_thread
+        text_inputed = input_fields(text_fields)
+        dept = text_inputed[0]
+        num = text_inputed[1]
+        area = text_inputed[2]
+        title = text_inputed[3]
+
+        # stoping the worker thread if there was already a query going on
+        if worker_thread is not None:
+            worker_thread.stop()
+        worker_thread = WorkerThread(host, port, dept, num, area, title, queue)
+        worker_thread.start()
+
+    # query the database at each key store in either of the text fields
+    text_fields[0].textChanged.connect(query_helper)
+    text_fields[1].textChanged.connect(query_helper)
+    text_fields[2].textChanged.connect(query_helper)
+    text_fields[3].textChanged.connect(query_helper)
+
+    # when we open the database
+    query_helper()
 
     # if an item in the list is double-click, dialog appears
     def double_click_slot():
@@ -203,20 +309,8 @@ def main() :
                 else:
                     create_dialog(format_dialogue(in_list[1]))
 
-        # except sock_error, s_err:
-        #     msg = str(s_err)
-        #     create_dialog(msg)
-
         except Exception as ex:
             create_dialog(str(ex))
-
-    double_click_slot()
-
-    # if the user presses Enter or click the submit button
-    text_fields[0].returnPressed.connect()
-    text_fields[1].returnPressed.connect()
-    text_fields[2].returnPressed.connect()
-    text_fields[3].returnPressed.connect()
 
     # if the user double clicks on an item in the list
     courses_list.itemActivated.connect(double_click_slot)
