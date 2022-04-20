@@ -7,20 +7,35 @@ from os import name
 from sys import exit, stderr
 from socket import socket, SOL_SOCKET, SO_REUSEADDR
 import argparse
+from multiprocessing import Process, cpu_count
 from pickle import dump, load
 from reg_details import get_detail
 from reg_overview import get_overviews
+from time import process_time
 
 #-----------------------------------------------------------------------
 
-def handle_client(sock):
+def consume_cpu_time(delay):
+
+    i = 0
+    initial_time = process_time()
+    while(process_time() - initial_time) < delay:
+        i += 1
+
+#-----------------------------------------------------------------------
+
+def handle_client(sock, delay):
     successful = False
     in_flo = sock.makefile(mode='rb')
     raw_input = load(in_flo)
+
     input_type = int(raw_input[0])
     input_tuple = raw_input[1]
     print("input type: ", input_type)
     print("input tuple: ", input_tuple)
+
+    consume_cpu_time(delay)
+
     if input_type != 0 | input_type != 1:
         print('Improper Input Type')
         return
@@ -49,6 +64,8 @@ def create_parser():
         allow_abbrev=False)
     parser.add_argument('port', type=int,
         help='the port at which the server should listen')
+    parser.add_argument('delay', type=int,
+        help='the artificial number of seconds the server will wait after a query')
     return parser
 
 #-----------------------------------------------------------------------
@@ -57,8 +74,11 @@ def main():
     parser = create_parser()
     input_args = parser.parse_args()
 
+    print('CPU count:', cpu_count)
+
     try:
         port = input_args.port
+        delay = input_args.delay
 
         server_sock = socket()
         print('Opened server socket')
@@ -80,7 +100,10 @@ def main():
                     print('Accepted connection, opened socket')
                     print('Server IP addr and port:',sock.getsockname())
                     print('Client IP addr and port:',client_addr)
-                    handle_client(sock)
+                    process = Process(target=handle_client,
+                        args=[sock, delay])
+                    process.start()
+
             except Exception as ex:
                 print(ex, file=stderr)
 
