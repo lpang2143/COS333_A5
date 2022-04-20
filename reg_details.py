@@ -24,9 +24,9 @@ def get_detail(raw_input):
             with closing(connection.cursor()) as cursor:
                 # query for the courseid, days, starttime, endtime,
                 # building and room number
-                stmt = "SELECT classes.courseid, days, "
-                stmt += "starttime, endtime, bldg, roomnum "
-                stmt += "FROM classes WHERE classes.classid = ?"
+                stmt = ("SELECT classes.courseid, days, starttime,"
+                        " endtime, bldg, roomnum "
+                        "FROM classes WHERE classes.classid = ?")
                 cursor.execute(stmt, [class_id])
                 row = cursor.fetchone()
 
@@ -34,8 +34,8 @@ def get_detail(raw_input):
                 # redundant now that course_id is taken from table
                 if row is None:
                     # split string to reduce line length for pylint
-                    str_out = 'regdetails.py: no class with '
-                    str_out += 'classid {0} exists'
+                    str_out = ('regdetails.py: no class with'
+                               ' classid {0} exists')
                     print(str_out.format(class_id), file=stderr)
                     return None
 
@@ -49,9 +49,9 @@ def get_detail(raw_input):
                 output["room"] = row[5]
 
                 # querying for the department and course number
-                stmt = "SELECT dept, coursenum FROM crosslistings "
-                stmt += "WHERE crosslistings.courseid = ? "
-                stmt += "ORDER BY dept ASC, coursenum ASC"
+                stmt = ("SELECT dept, coursenum FROM crosslistings"
+                        " WHERE crosslistings.courseid = ?"
+                        " ORDER BY dept ASC, coursenum ASC")
                 cursor.execute(stmt, [course_id])
                 row = cursor.fetchone()
                 depts = []
@@ -64,11 +64,9 @@ def get_detail(raw_input):
                 output["departments"] = depts
                 output["course numbers"] = coursenums
 
-                # querying for area, title, description, and
-                # prerequisites
-                stmt = "SELECT area, title, descrip, prereqs "
-                stmt += "FROM courses "
-                stmt += "WHERE courses.courseid = ?"
+                # querying for area, title, description, prerequisites
+                stmt = ("SELECT area, title, descrip, prereqs"
+                        " FROM courses WHERE courses.courseid = ?")
                 cursor.execute(stmt, [course_id])
                 row = cursor.fetchone()
 
@@ -78,15 +76,14 @@ def get_detail(raw_input):
                 output["prerequisites"] = row[3]
 
                 # querying for the profIds
-                stmt = "SELECT profid FROM coursesprofs "
-                stmt += "WHERE coursesprofs.courseid = ?"
+                stmt = ("SELECT profid FROM coursesprofs"
+                        " WHERE coursesprofs.courseid = ?")
                 cursor.execute(stmt, [course_id])
                 row = cursor.fetchall()
 
                 # querying for the professors using the profIds
-                stmt = "SELECT profname FROM "
-                stmt += "profs WHERE profs.profid = ?"
-                stmt += "ORDER BY profname ASC"
+                stmt = ("SELECT profname FROM profs WHERE"
+                        " profs.profid = ? ORDER BY profname ASC")
                 profs =[]
                 for prof_id in row:
                     cursor.execute(stmt, prof_id)

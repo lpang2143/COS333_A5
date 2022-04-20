@@ -4,17 +4,16 @@
 #----------------------------------------------------------------------
 
 import argparse
-import errno
-from socket import socket, error as sock_error
+from threading import Thread
+from socket import socket
 from pickle import load, dump
-from sys import stderr, exit, argv
+from sys import exit, argv
+from queue import Queue, Empty
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QFrame, QLabel, QLineEdit, QGridLayout,
     QVBoxLayout, QHBoxLayout, QDesktopWidget, QListWidget, QMessageBox)
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QFont
-from threading import Thread
-from queue import Queue, Empty
 
 #----------------------------------------------------------------------
 # Returns the argparse object, parser, after processing the command-line
@@ -161,14 +160,11 @@ def create_window(frame):
 
 #----------------------------------------------------------------------
 class WorkerThread (Thread):
-    def __init__(self, host, port, dept, num, area, title, queue):
+    def __init__(self, host, port, info, queue):
         Thread.__init__(self)
         self._host = host
         self._port = port
-        self._dept = dept
-        self._num = num
-        self._area = area
-        self._title = title
+        self._info = info
         self._queue = queue
         self._should_stop = False
 
@@ -182,9 +178,7 @@ class WorkerThread (Thread):
 
                 # the tuple with the information inputed by the user
                 out_flo = sock.makefile(mode='wb')
-                text_to_send = [self._dept, self._num, 
-                                self._area, self._title]
-                out_list = [0, text_to_send]
+                out_list = [0, self._info]
                 dump(out_list, out_flo)
                 out_flo.flush()
 
@@ -228,10 +222,8 @@ def poll_queue_helper(queue, courses_list):
 #----------------------------------------------------------------------
 def main() :
 
-    parser = create_parser()
-    input_args = parser.parse_args()
-
-    # the command-line argumets
+    # getting the command-line argumets
+    input_args = create_parser().parse_args()
     host = input_args.host
     port = int(input_args.port)
 
@@ -246,7 +238,6 @@ def main() :
     queue = Queue()
     def poll_queue():
         poll_queue_helper(queue, courses_list)
-    
     timer = QTimer()
     timer.timeout.connect(poll_queue)
     timer.setInterval(100)
@@ -256,16 +247,12 @@ def main() :
     worker_thread = None
     def query_helper():
         nonlocal worker_thread
-        text_inputed = input_fields(text_fields)
-        dept = text_inputed[0]
-        num = text_inputed[1]
-        area = text_inputed[2]
-        title = text_inputed[3]
+        info = input_fields(text_fields)
 
-        # stoping the worker thread if there was already a query going on
+        # stops the worker thread if there was already a query going on
         if worker_thread is not None:
             worker_thread.stop()
-        worker_thread = WorkerThread(host, port, dept, num, area, title, queue)
+        worker_thread = WorkerThread(host, port, info, queue)
         worker_thread.start()
 
     # query the database at each key store in either of the text fields
@@ -297,12 +284,12 @@ def main() :
                 out_flo.flush()
 
                 # reading the information from the server's query
-                in_flo = sock.makefile(mode='rb')
-                in_list = load(in_flo)
+                in_list = load(sock.makefile(mode='rb'))
 
                 # check if the query worked or not
                 if in_list[0] is False:
-                    msg = "A server error occurred. Please contact the system administrator."
+                    msg = ("A server error occurred."
+                          " Please contact the system administrator.")
                     create_dialog(msg)
 
                 # adding each formatted line to the list of courses

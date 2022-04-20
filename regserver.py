@@ -9,9 +9,9 @@ from socket import socket, SOL_SOCKET, SO_REUSEADDR
 import argparse
 from multiprocessing import Process, cpu_count
 from pickle import dump, load
+from time import process_time
 from reg_details import get_detail
 from reg_overview import get_overviews
-from time import process_time
 
 #-----------------------------------------------------------------------
 
@@ -65,7 +65,8 @@ def create_parser():
     parser.add_argument('port', type=int,
         help='the port at which the server should listen')
     parser.add_argument('delay', type=int,
-        help='the artificial number of seconds the server will wait after a query')
+        help=('the artificial number of seconds'
+              'the server will wait after a query'))
     return parser
 
 #-----------------------------------------------------------------------
