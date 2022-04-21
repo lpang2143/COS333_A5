@@ -1,15 +1,16 @@
 lpang_hishimwe
 
-Names: Herve Ishimwe, Louis Pang
-Assignment: 2
+Names: Hervé Ishimwe, Louis Pang
+Assignment: 5
 
 Contribution:
-Louis - I worked on implementing the multi
+Louis - I worked mainly on the implementing regserver.py by creating multiple
+        processes. I also worked on the error handling by making sure all the
+        errors we had missed have been fixed. I also extensively tested our code. 
 
-Herve - I wrote most of reg.py and helped to debug regserver.py. My
-code from last
-assignment was used in reg_details.py and reg_overview.py. I did a lot 
-of the GUI formatting and event handling.
+Herve - I readapted our code for reg.py by incorporating threads and queue for
+        responsiveness. I also helped on some errors that we had missed in
+        Assignment 2. I did a lot of the GUI formatting and event handling.
 
 Help From Other People:
 N/a
@@ -17,14 +18,18 @@ N/a
 Sources:
 https://stackoverflow.com/questions/1134607/how-to-get-the-errno-of-an-
 ioerror
+https://stackoverflow.com/questions/9323888/what-are-the-differences-
+between-event-and-signal-in-qt
 https://pythonprogramminglanguage.com/pyqt-line-edit/
 https://stackabuse.com/python-how-to-add-keys-to-dictionary/
 https://www.youtube.com/watch?v=WM1z8soch0Q
 https://docs.python.org/3/library/pickle.html
+https://stackoverflow.com/questions/9594768/how-can-i-empty-a-
+qlistwidget-without-having-it-delete-all-of-the-qlistitemwidge#:~:
+text=QListWidget%20has%20a%20member%20named,items%20will%20be%20permanently%20deleted.
 
 Time Spent:
-10 hours
+5 hours
 
 Assessment:
-I learned a lot. I wish that the advice section had a more clear 
-description of how to pass multiple objects using pickle.
+We learned a lot espectially in regards to processes and threads. It was 
