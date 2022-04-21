@@ -292,6 +292,10 @@ def main() :
                           " Please contact the system administrator.")
                     create_dialog(msg)
 
+                elif ((in_list[0] is True) & (in_list[1] == "no class_id")):
+                    msg = ('reg_details.py: no class with classid ' + rows[0] + ' exists')
+                    create_dialog(msg)
+
                 # adding each formatted line to the list of courses
                 else:
                     create_dialog(format_dialogue(in_list[1]))

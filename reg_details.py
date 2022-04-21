@@ -97,7 +97,7 @@ def get_detail(raw_input):
     except TypeError:
         print('reg_details.py: no class with classid {0} exists'
             .format(class_id), file=stderr)
-        return None
+        return (True, "no class_id")
 
     except Exception as ex:
         print('reg_details.py: ' + str(ex), file=stderr)
