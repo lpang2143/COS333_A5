@@ -247,12 +247,11 @@ def main() :
     worker_thread = None
     def query_helper():
         nonlocal worker_thread
-        info = input_fields(text_fields)
-
         # stops the worker thread if there was already a query going on
         if worker_thread is not None:
             worker_thread.stop()
-        worker_thread = WorkerThread(host, port, info, queue)
+        worker_thread = WorkerThread(host, port,
+                            input_fields(text_fields), queue)
         worker_thread.start()
 
     # query the database at each key store in either of the text fields
@@ -279,8 +278,7 @@ def main() :
 
                 # tuple with the information inputed by the user
                 out_flo = sock.makefile(mode='wb')
-                out_list = [1, rows[0]]
-                dump(out_list, out_flo)
+                dump([1, rows[0]], out_flo)
                 out_flo.flush()
 
                 # reading the information from the server's query
@@ -288,9 +286,8 @@ def main() :
 
                 # check if the query worked or not
                 if in_list[0] is False:
-                    msg = ("A server error occurred."
-                          " Please contact the system administrator.")
-                    create_dialog(msg)
+                    create_dialog(("A server error occurred."
+                          " Please contact the system administrator."))
 
                 elif (in_list[0] is True) & (in_list[1]=="no class_id"):
                     msg = 'reg_details.py: no class with classid '
@@ -308,8 +305,8 @@ def main() :
     courses_list.itemActivated.connect(double_click_slot)
 
     # create frame, window then show it
-    frame = create_frame(labels,text_fields,courses_list)
-    window = create_window(frame)
+    window = create_window(
+                create_frame(labels,text_fields,courses_list))
     window.show()
     exit(app.exec_())
 
